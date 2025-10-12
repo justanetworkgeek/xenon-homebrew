@@ -20,16 +20,17 @@ int main(){
     fatInitDefault();
 
     // File pointer for the xell stage2 file.
-    FILE* xell_fptr;
+    FILE *xell_fptr;
 
     // File name to look for.
+    // default: stage2.elf32
+    // If this fails, each xell binary variant will also be tried (xell-1f.bin, xell-2f.bin, xell-gggggg.bin)
     char *xell_filename = "stage2.elf32";
 
-    // Full file path for the xell stage2 file.
-    // example: uda0:/stage2.elf32
-    char *xell_file_path = "uda0:/stage2.elf32";
+    // Full file path for the xell file.
+    char *xell_file_path = "";
 
-    // Check if a file named "stage2.elf32" exists on any USB drive.
+    // Check if a file named "stage2.elf32" exists on any fat32 formatted USB drive.
     // There can only be a maximum of 3 connected fat32 devices in libxenon.
     for(int i = 0; i <= 2; i++){
         // Track the iteration.
@@ -47,10 +48,11 @@ int main(){
 
         xell_fptr = fopen(xell_file_path, "rb");
         if(xell_fptr == NULL){ // If there is an error opening the file:
-            printf("Could not open: ud%c0:/stage2.elf32\n", disk_letter);
+            printf("Could not open: ud%c0:/%s\n", disk_letter, xell_filename);
         } else{ // If the file was found, try loading it.
             printf("Opening file: ud%c0:/%s", disk_letter, xell_filename);
-           	elf_runFromDisk(xell_fptr);
+           	elf_runFromDisk(xell_file_path);
+            fclose(xell_fptr);
         }
     }
 
