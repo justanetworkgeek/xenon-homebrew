@@ -14,12 +14,17 @@
 int main(){
 	xenos_init(VIDEO_MODE_AUTO);
 	console_init();
-	telnet_console_init();
-	
+	usb_init();
+	network_init();
+	network_print_config();
+
+	printf("On controller: Press X to reload XeLL. Y to shutdown. B to reboot.\n");
+	printf("On UART or telnet: Press x to reload XeLL. y to shutdown. b to reboot.\n");
+	telnet_console_init(); // redirect printf output here
+
 	// Initialize 360 controller - taken from XeLL kbootconf.c
 	struct controller_data_s ctrl;
-
-	printf("On controller, telnet, or UART: Press X to reload XeLL. Y to shutdown. B to reboot.");
+	struct controller_data_s old_ctrl;
 
 	// Controller, UART, or telnet can be used now to control things.
 	while(1){
@@ -27,8 +32,8 @@ int main(){
 		usb_do_poll();
 
 		// For telnet
-		network_poll();
-		
+		network_poll();		
+
 		// Controller 
 		if (get_controller_data(&ctrl, 0)) {
 			if (ctrl.x){
@@ -44,6 +49,7 @@ int main(){
 				for(;;);
 				break;
 			}
+			old_ctrl=ctrl;
 		}
 
 		// If either telnet or UART send a keystroke, see what char it was and process it.
@@ -62,8 +68,6 @@ int main(){
 					xenon_smc_power_reboot();
 					for(;;);
 					break;
-				default:
-					printf("Detected char.\n");
 			}
 		}
 	}
