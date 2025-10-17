@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 #include <console/console.h>
-#include <console/telnet_console.h>
+#include <console/telnet_console.h> // recv_buf
 #include <xenos/xenos.h>
 #include <input/input.h>
 #include <network/network.h>
@@ -69,6 +69,10 @@ int main(){
 					for(;;);
 					break;
 			}
+		}
+
+		if(recv_buf[0] == 'x'){
+			exit(0);
 		}
 	}
 
