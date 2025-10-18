@@ -18,8 +18,8 @@ int main(){
 	network_init();
 	network_print_config();
 
-	printf("On controller: Press X to reload XeLL. Y to shutdown. B to reboot.\n");
-	printf("On UART or telnet: Press x to reload XeLL. y to shutdown. b to reboot.\n");
+	printf("On controller, UART or telnet: Press X to reload XeLL. Y to shutdown. B to reboot.\n");
+	printf("Telnet requires a newline to be sent.\n\n");
 	telnet_console_init(); // redirect printf output here
 
 	// Initialize 360 controller - taken from XeLL kbootconf.c
@@ -32,27 +32,25 @@ int main(){
 		usb_do_poll();
 
 		// For telnet
-		network_poll();		
+		network_poll();
+		unsigned char latest_telnet_char = telnet_recv_buf[0];
 
 		// Controller 
 		if (get_controller_data(&ctrl, 0)) {
 			if (ctrl.x){
 				exit(0);
-				for(;;);
 				break;
 			} if (ctrl.y){
 				xenon_smc_power_shutdown();
-				for(;;);
 				break;
 			} if (ctrl.b){
 				xenon_smc_power_reboot();
-				for(;;);
 				break;
 			}
 			old_ctrl=ctrl;
 		}
 
-		// If either telnet or UART send a keystroke, see what char it was and process it.
+		// If UART sends a keystroke then see what char it was and process it.
 		if(kbhit()){
 			switch(getch()){
 				case 'x':
@@ -60,22 +58,32 @@ int main(){
 					// Platform specific functioanlity defined in libxenon/drivers/newlib/xenon_syscalls.c
 					exit(0);
 					break;
-				case 'h':
+				case 'y':
 					xenon_smc_power_shutdown();
-					for(;;);
 					break;
-				case 'r':
+				case 'b':
 					xenon_smc_power_reboot();
-					for(;;);
+					break;
+				default:
+					printf("Remote char received via UART.\n");
 					break;
 			}
 		}
 
-		if(recv_buf[0] == 'x'){
+		// Check the telnet receive buffer for any chars and process them as well.
+		// Requires update to LibXenon that externalizes the receive buffer.
+		if(latest_telnet_char == 'x'){
 			exit(0);
+			break;
+		} else if(latest_telnet_char == 'y'){
+			xenon_smc_power_shutdown();
+			break;
+		} else if(latest_telnet_char == 'b'){
+			xenon_smc_power_reboot();
+			break;
 		}
 	}
 
-	// Return to XeLL on NAND or else hard reboot.
+	// Return to XeLL on NAND or else hard reboot. Should never get here.
 	exit(0);
 }
